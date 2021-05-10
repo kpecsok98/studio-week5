@@ -25,11 +25,20 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background-color: #fff;
+      right: 50px;
+      bottom: 700px;
+      overflow-y: scroll;
+      background-color: white ;
+      opacity: 0.92;
       padding: 5px 20px 5px 20px;
       border-radius: 10px;
-      font-family: Lato, sans-serif;
+      font-family: Montserrat, sans-serif;
+      color: black;
     }
+    a {
+    text-decoration: underline;
+    color: #63AFAE;
+}
 
   </style>
 </head>
@@ -37,8 +46,11 @@
 <body>
   <div id="map"></div>
   <div id="instructions">
-    <h2>🚰 Instructions</h2>
-    <p>Click anywhere on the map to see water sites within a 500m radius. Stand alone water sites will be highlighted in red.</p>
+    <h1>🚰 Water Spots in the Zaatari Refugee Camp!</h1>
+    <h2> Background</h2>
+    <p> The SPHERE standards which mandates standards for humanitarian action state that residents of a refugee camp should travel less than 500 meters to access water. This interactive map shows that no matter where a resident resides in the Zaatari Refugee Camp in Jordan they are within 500 meters of a water spot, meeting SPHERE Standards. Check it out yourself by following the simple instructions below. To learn more about SPHERE Sandards related to water, check out the SPHERE Handbook Chapter on Water <a href="https://handbook.spherestandards.org/en/sphere/#ch006_004">here</a>. As the data changes you may want to update it, if you wish to do so follow this tutorial on collecting and filtering this data, and if you wish to code the data click on this link which provides a reference of the code used to present the data on this webpage.</p>
+    <h2> Instructions</h2>
+    <p>Click anywhere on the map to see water sites within a 500m radius at the Zaatari Refugee Camp. Stand alone water sites within the 500 meter radius will be highlighted in red when you click on the map.</p>
   </div>
   <script>
     // Data showing water points - replace the dummy URL with your own.
@@ -72,6 +84,8 @@
         }
       });
 
+
+
       // When the map has finished loading, add a new layer that will be empty
       // at first, but will eventually house our confirmed water sites.
       map.addLayer({
@@ -87,6 +101,8 @@
         }
       });
 
+
+
       // Draw the search radius on the map
       map.addLayer({
         id: 'search-radius',
@@ -100,14 +116,19 @@
           'fill-opacity': 0.5
         }
       });
-      });
+
 
     //Click event goes here!
     map.on('click', function(e) {
       var eventLngLat = [e.lngLat.lng, e.lngLat.lat];
-      console.log(eventLngLat)
+      var searchRadius = makeRadius(eventLngLat, 500);
+      map.getSource('search-radius').setData(searchRadius);
+      var featuresInBuffer = spatialJoin('OSM-water', searchRadius);
+      map.getSource('selected-water').setData(turf.featureCollection(featuresInBuffer));
+      /*console.log(eventLngLat)*/
     });
 
+  });
     //makeRadius function goes here!
       function makeRadius(lngLatArray, radiusInMeters) {
         var point = turf.point(lngLatArray);
@@ -115,15 +136,12 @@
         return buffered;
       }
 
-      var searchRadius = makeRadius(eventLngLat, 500);
-        map.getSource('search-radius').setData(searchRadius);
-
     //spatialJoin function goes here!
     function spatialJoin(sourceLayer, filterFeature) {
       // Need this line to specify the array since map.getSource in the click event doesn't do this.
       sourceGeoJSON = map.querySourceFeatures(sourceLayer);
       // Loop through all the features in the source geojson and return the ones that
-      // are inside the filter feature (buffered radius) and are confirmed landing sites
+      // are inside the filter feature (buffered radius) and are confirmed free standing sites
       var joined = sourceGeoJSON.filter(function (feature) {
         return turf.booleanPointInPolygon(feature, filterFeature) && feature.properties.type === 'Free_standing';
       });
@@ -131,9 +149,6 @@
       return joined;
     };
 
-    var featuresInBuffer = spatialJoin('OSM-water', searchRadius);
-
-    map.getSource('selected-water').setData(turf.featureCollection(featuresInBuffer));
 
   </script>
 
